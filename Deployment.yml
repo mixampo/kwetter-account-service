@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kwetter-account-service
+  namespace: development
+  labels:
+    track: kwetter-account-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kwetter-account-service
+  template:
+    metadata:
+      labels:
+        app: kwetter-account-service
+        environment: development
+    spec:
+      containers:
+      - name: kwetter-account-service
+        image: mixampo.azurecr.io/repository-kwetter-account-service:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kwetter-account-service
+  namespace: development
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v1
+      kind: Mapping
+      name: kwetter-account-service_mapping
+      prefix: /account/
+      service: kwetter-account-service
+      timeout_ms: 10000
+      idle_timeout_ms: 500000
+      connect_timeout_ms: 10000
+  labels:
+    name: kwetter-account-service
+spec:
+  selector:
+    app: kwetter-account-service
+    environment: development
+  ports:
+  - port: 80
+    name: http
+    protocol: TCP
+    targetPort: 80
+  type: ClusterIP
